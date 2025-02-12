@@ -50,7 +50,6 @@ func (g *GameState) ProcessCSV() {
 	}
 
 	for index, record := range records {
-		fmt.Println(index, record)
 
 		if index > 0 {
 			question := Question{
@@ -63,11 +62,18 @@ func (g *GameState) ProcessCSV() {
 		}
 	}
 }
+func (g *GameState) Run() {
+	for index, question := range g.Question {
+		fmt.Printf("\033[33m %d. %s \033[33m\n", index+1, question.Text)
+
+	}
+}
 
 func main() {
 	game := &GameState{}
 	go game.ProcessCSV()
 	game.Init()
+	game.Run()
 }
 
 func ToInt(s string) int {
