@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Question struct {
@@ -16,74 +18,102 @@ type Question struct {
 
 type GameState struct {
 	Name     string
-	Points   string
+	Points   int
 	Question []Question
 }
 
 func (g *GameState) Init() {
-	fmt.Println("Seja Bem vindo(a) ao quiz")
-	fmt.Println(("Escreva seu nome:"))
+	fmt.Println("Seja Bem-vindo(a) ao quiz")
+	fmt.Print("Escreva seu nome: ")
+
 	reader := bufio.NewReader(os.Stdin)
 	name, err := reader.ReadString('\n')
-
 	if err != nil {
-		panic("Erro ao ler a string")
+		panic("Erro ao ler o nome")
 	}
 
-	g.Name = name
-
-	fmt.Printf("Vamos ao jogo %s", g.Name)
+	g.Name = strings.TrimSpace(name)
+	fmt.Printf("Vamos ao jogo, %s!\n\n", g.Name)
 }
 
 func (g *GameState) ProcessCSV() {
 	f, err := os.Open("quizgo.csv")
 	if err != nil {
-		panic("erro ao ler arquivo")
+		panic("Erro ao ler arquivo CSV")
 	}
-
 	defer f.Close()
 
 	reader := csv.NewReader(f)
 	records, err := reader.ReadAll()
 	if err != nil {
-		panic("Error ao ler csv")
+		panic("Erro ao ler CSV")
 	}
 
 	for index, record := range records {
-
 		if index > 0 {
+			correctAnswer, _ := ToInt(record[5])
 			question := Question{
 				Text:    record[0],
 				Options: record[1:5],
-				Answer:  ToInt(record[5]),
+				Answer:  correctAnswer,
 			}
-
 			g.Question = append(g.Question, question)
 		}
 	}
 }
+
 func (g *GameState) Run() {
+	scanner := bufio.NewScanner(os.Stdin)
+
 	for index, question := range g.Question {
-		fmt.Printf("\033[33m %d. %s \033[0m\n", index+1, question.Text)
+		fmt.Printf("\033[33m%d. %s\033[0m\n", index+1, question.Text)
 
 		for j, option := range question.Options {
 			fmt.Printf("[%d] %s\n", j+1, option)
 		}
+
+		fmt.Print("Digite uma alternativa: ")
+
+		var answer int
+		var err error
+
+		for {
+			scanner.Scan()
+			input := strings.TrimSpace(scanner.Text())
+			answer, err = ToInt(input)
+
+			if err != nil {
+				fmt.Println(err.Error())
+				fmt.Print("Digite um número válido: ")
+				continue
+			}
+			break
+		}
+
+		if answer == question.Answer {
+			fmt.Println("Parabéns, você acertou!!")
+			g.Points += 10
+		} else {
+			fmt.Println("Ops! Errou!")
+		}
+
+		fmt.Println("------------------")
 	}
+
+	fmt.Printf("Pontuação final: %d\n", g.Points)
 }
 
 func main() {
 	game := &GameState{}
-	go game.ProcessCSV()
+	game.ProcessCSV()
 	game.Init()
 	game.Run()
 }
 
-func ToInt(s string) int {
+func ToInt(s string) (int, error) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		panic(err)
+		return 0, errors.New("entrada inválida, digite apenas números")
 	}
-
-	return i
+	return i, nil
 }
