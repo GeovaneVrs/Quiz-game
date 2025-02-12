@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Question struct {
@@ -72,22 +73,32 @@ func (g *GameState) Run() {
 			fmt.Printf("[%d] %s\n", j+1, option)
 		}
 
-		fmt.Print("Digite uma alternativa: ")
+		fmt.Print("Digite uma alternativa (você tem 60 segundos): ")
+
+		answerCh := make(chan int)
+		timeout := time.After(60 * time.Second)
+
+		go func() {
+			for {
+				scanner.Scan()
+				input := strings.TrimSpace(scanner.Text())
+				answer, err := ToInt(input)
+				if err != nil {
+					fmt.Println(err.Error())
+					fmt.Print("Digite um número válido: ")
+					continue
+				}
+				answerCh <- answer
+				return
+			}
+		}()
 
 		var answer int
-		var err error
-
-		for {
-			scanner.Scan()
-			input := strings.TrimSpace(scanner.Text())
-			answer, err = ToInt(input)
-
-			if err != nil {
-				fmt.Println(err.Error())
-				fmt.Print("Digite um número válido: ")
-				continue
-			}
-			break
+		select {
+		case answer = <-answerCh:
+		case <-timeout:
+			fmt.Println("\nTempo esgotado! Resposta errada.")
+			answer = -1
 		}
 
 		if answer == question.Answer {
@@ -101,6 +112,11 @@ func (g *GameState) Run() {
 	}
 
 	fmt.Printf("Pontuação final: %d\n", g.Points)
+	if g.Points >= 20 {
+		fmt.Println("Parabéns, você foi APROVADO!")
+	} else {
+		fmt.Println("Infelizmente, você foi REPROVADO.")
+	}
 }
 
 func main() {
