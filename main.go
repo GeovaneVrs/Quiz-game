@@ -34,11 +34,37 @@ func (g *GameState) Init() {
 	}
 
 	g.Name = strings.TrimSpace(name)
+
+	fmt.Println("Escolha o tema do quiz:")
+	fmt.Println("1 - Matemática")
+	fmt.Println("2 - História")
+	fmt.Println("3 - Perguntas Gerais")
+	fmt.Print("Digite o número do tema escolhido: ")
+
+	var choice string
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	choice = strings.TrimSpace(scanner.Text())
+
+	var fileName string
+	switch choice {
+	case "1":
+		fileName = "./csv/matematica.csv"
+	case "2":
+		fileName = "./csv/historia.csv"
+	case "3":
+		fileName = "./csv/geral.csv"
+	default:
+		fmt.Println("Escolha inválida, saindo do jogo.")
+		os.Exit(1)
+	}
+
 	fmt.Printf("Vamos ao jogo, %s!\n\n", g.Name)
+	g.ProcessCSV(fileName)
 }
 
-func (g *GameState) ProcessCSV() {
-	f, err := os.Open("quizgo.csv")
+func (g *GameState) ProcessCSV(fileName string) {
+	f, err := os.Open(fileName)
 	if err != nil {
 		panic("Erro ao ler arquivo CSV")
 	}
@@ -112,7 +138,7 @@ func (g *GameState) Run() {
 	}
 
 	fmt.Printf("Pontuação final: %d\n", g.Points)
-	if g.Points >= 20 {
+	if g.Points >= 50 {
 		fmt.Println("Parabéns, você foi APROVADO!")
 	} else {
 		fmt.Println("Infelizmente, você foi REPROVADO.")
@@ -121,7 +147,6 @@ func (g *GameState) Run() {
 
 func main() {
 	game := &GameState{}
-	game.ProcessCSV()
 	game.Init()
 	game.Run()
 }
