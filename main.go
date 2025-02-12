@@ -64,8 +64,11 @@ func (g *GameState) ProcessCSV() {
 }
 func (g *GameState) Run() {
 	for index, question := range g.Question {
-		fmt.Printf("\033[33m %d. %s \033[33m\n", index+1, question.Text)
+		fmt.Printf("\033[33m %d. %s \033[0m\n", index+1, question.Text)
 
+		for j, option := range question.Options {
+			fmt.Printf("[%d] %s\n", j+1, option)
+		}
 	}
 }
 
